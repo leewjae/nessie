@@ -31,6 +31,7 @@ import scala.collection.JavaConverters._
 case class ShowLogExec(
     output: Seq[Attribute],
     branch: Option[String],
+    timestampOrHash: Option[String],
     currentCatalog: CatalogPlugin,
     catalog: Option[String]
 ) extends NessieExec(catalog = catalog, currentCatalog = currentCatalog)
@@ -39,11 +40,16 @@ case class ShowLogExec(
   override protected def runInternal(
       api: NessieApiV1
   ): Seq[InternalRow] = {
+
     val refName = branch
       .map(unquoteRefName)
       .getOrElse(
         NessieUtils.getCurrentRef(api, currentCatalog, catalog).getName
       )
+
+    val ref = NessieUtils.calculateRef(refName, timestampOrHash, api)
+    NessieUtils.setCurrentRefForSpark(currentCatalog, catalog, ref, timestampOrHash.isDefined)
+
     val stream = api.getCommitLog.refName(refName).stream()
 
     stream.iterator.asScala
