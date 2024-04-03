@@ -48,9 +48,8 @@ case class ShowLogExec(
       )
 
     val ref = NessieUtils.calculateRef(refName, timestampOrHash, api)
-    NessieUtils.setCurrentRefForSpark(currentCatalog, catalog, ref, timestampOrHash.isDefined)
 
-    val stream = api.getCommitLog.refName(refName).stream()
+    val stream = api.getCommitLog.reference(ref).stream()
 
     stream.iterator.asScala
       .map(entry =>
